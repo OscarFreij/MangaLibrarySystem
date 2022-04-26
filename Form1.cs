@@ -19,7 +19,7 @@ namespace MangaLibrarySystem
 
         private async void searchButton_Click(object sender, EventArgs e)
         {
-            AmazonRequest.GetBook(isbnTextBox.Text);
+            System.Diagnostics.Debug.WriteLine(await AmazonRequest.GetBookDataAsync(isbnTextBox.Text));
         }
     }
 }

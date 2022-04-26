@@ -146,14 +146,49 @@ namespace MangaLibrarySystem
             }
         }
 
-        public static async void GetBook(string isbn)
+        public static async Task<AmazonRequestRespons> GetBookDataAsync(string isbn)
         {
             HtmlDocument doc = await GetHtmlAsync(isbn);
             HtmlNodeCollection nodes = GetNodes(doc);
+            string[] byLineSplit = GetByLine(nodes[0]).Split('|');
 
-            System.Diagnostics.Debug.WriteLine("ImageURL: " + GetImageUri(nodes[0]).ToString());
-            System.Diagnostics.Debug.WriteLine("Titel: " + GetTitle(nodes[0]).ToString());
-            System.Diagnostics.Debug.WriteLine("ByLine: " + GetByLine(nodes[0]).ToString());
+            return new AmazonRequestRespons(isbn, GetImageUri(nodes[0]), GetTitle(nodes[0]), new string[] { byLineSplit[0] }, byLineSplit[1]);
+        }
+
+        public class AmazonRequestRespons
+        {
+            private const string DateTimeFormat = "dd/MM/yyyy";
+
+            public string isbn { get; }
+            public Uri imageUri { get; }
+            public string title { get; }
+            public string[] authors { get; }
+            public DateTime releaseDateTime { get; }
+
+            public AmazonRequestRespons(string isbn, Uri imageUri, string title, string[] authors, string releaseDateTimeString)
+            {
+                this.isbn = isbn;
+                this.imageUri = imageUri;
+                this.title = title;
+                this.authors = authors;
+                this.releaseDateTime = DateTime.Parse(releaseDateTimeString);
+            }
+
+            public override string ToString()
+            {
+                string authorsString = String.Empty;
+
+                for (int i = 0; i < authors.Length; i++)
+                {
+                    authorsString += $"{i}|{authors[i]}";
+                    if (i < authors.Length-1)
+                    {
+                        authorsString += ",";
+                    }
+                }
+
+                return $"isbn: {this.isbn}; title: {this.title}; imageUri: {this.imageUri.ToString()}; authors: {authorsString}; releaseDateTime: {this.releaseDateTime.ToString(DateTimeFormat)}";
+            }
         }
     }
 }
