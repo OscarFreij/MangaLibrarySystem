@@ -155,6 +155,28 @@ namespace MangaLibrarySystem
             return new AmazonRequestRespons(isbn, GetImageUri(nodes[0]), GetTitle(nodes[0]), new string[] { byLineSplit[0] }, byLineSplit[1]);
         }
 
+        public static async Task<System.IO.Stream> GetStreamAsync(Uri uri)
+        {
+            if (httpClient == null)
+            {
+                InitHttpClient();
+            }
+
+            System.Diagnostics.Debug.WriteLine(uri.ToString());
+
+            try
+            {
+                HttpResponseMessage response = await httpClient.GetAsync(uri);
+                response.EnsureSuccessStatusCode();
+                return await response.Content.ReadAsStreamAsync();
+            }
+            catch (HttpRequestException e)
+            {
+                System.Diagnostics.Debug.Fail(e.Message);
+                return null;
+            }
+        }
+
         public class AmazonRequestRespons
         {
             private const string DateTimeFormat = "dd/MM/yyyy";
