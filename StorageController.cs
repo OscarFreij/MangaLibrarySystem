@@ -36,6 +36,28 @@ namespace MangaLibrarySystem
             return fileBytes;
         }
 
+        public static async void WriteFileBytes(FileType fileType, string fileId, byte[] data)
+        {
+            string subDirectory = string.Empty;
+            switch (fileType)
+            {
+                case FileType.Image:
+                    subDirectory = "/image";
+                    break;
+
+                case FileType.Data:
+                    subDirectory = "/data";
+                    break;
+            }
+
+            using (FileStream fs = File.Open(StorageDirectory + subDirectory + "/" + fileId, FileMode.Create))
+            {
+                await fs.WriteAsync(data, 0, (int)data.Length);
+            }
+
+            return;
+        }
+
         public static Bitmap ByteToImage(byte[] blob)
         {
             MemoryStream mStream = new MemoryStream();
