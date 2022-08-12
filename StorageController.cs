@@ -10,8 +10,8 @@ namespace MangaLibrarySystem
 {
     public static class StorageController
     {
-        public static string StorageDirectory;
-
+        public static string StorageDirectory = Directory.GetCurrentDirectory();
+        
         public static async Task<byte[]> ReadFileBytes(FileType fileType, string fileId)
         {
             string subDirectory = string.Empty;
@@ -66,6 +66,21 @@ namespace MangaLibrarySystem
             Bitmap bm = new Bitmap(mStream, false);
             mStream.Dispose();
             return bm;
+        }
+
+        public static void CheckStorrageDirectoryStructure()
+        {
+            if (!Directory.Exists(StorageDirectory + "/image"))
+            {
+                Directory.CreateDirectory(StorageDirectory + "/image");
+            }
+
+            if (!Directory.Exists(StorageDirectory + "/data"))
+            {
+                Directory.CreateDirectory(StorageDirectory + "/data");
+            }
+
+            return;
         }
 
         public enum FileType
