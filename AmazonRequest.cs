@@ -4,7 +4,9 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using HtmlAgilityPack;
+using HtmlDocument = HtmlAgilityPack.HtmlDocument;
 
 namespace MangaLibrarySystem
 {
@@ -24,11 +26,13 @@ namespace MangaLibrarySystem
 
             try
             {
-                HttpResponseMessage response = await httpClient.GetAsync(uri);
-                response.EnsureSuccessStatusCode();
-                string responseBody = await response.Content.ReadAsStringAsync();
+                //httpClient.DefaultRequestHeaders.ConnectionClose = true;
+
+                //HttpResponseMessage response = await httpClient.GetAsync(uri);
+                //response.EnsureSuccessStatusCode();
+                //string responseBody = await response.Content.ReadAsStringAsync();
                 // Above three lines can be replaced with new helper method below
-                // string responseBody = await client.GetStringAsync(uri);
+                string responseBody = await httpClient.GetStringAsync(uri);
 
                 HtmlDocument doc = new HtmlDocument();
                 doc.LoadHtml(responseBody);
@@ -55,6 +59,8 @@ namespace MangaLibrarySystem
 
             httpClient = new HttpClient(httpClientHandler);
             httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate");
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36 Edg/101.0.1210.53");
+            httpClient.DefaultRequestHeaders.Add("ConnectionClose", "true");
         }
 
         private static Uri CreateRequestURI(string isbn)
@@ -67,12 +73,13 @@ namespace MangaLibrarySystem
         {
             try
             {
-                HtmlNodeCollection nodes = doc.DocumentNode.SelectNodes($"//*[@id='search']/div[1]/div[1]/div/span[3]/div[2]/*[@data-index='1']");
+                //HtmlNodeCollection nodes = doc.DocumentNode.SelectNodes($"//*[@id='search']/div[1]/div[1]/div/span[3]/div[2]/*[@data-index='1']");
+                HtmlNodeCollection nodes = doc.DocumentNode.SelectNodes($"//*[@id='search']/div[1]/div[1]/div/span[1]/div[1]/div[2][@data-index='1']/div/div/div");
                 return nodes;
             }
             catch (Exception e)
             {
-                System.Diagnostics.Debug.Fail(e.Message);
+                System.Diagnostics.Debug.WriteLine(e.Message);
                 return null;
             }
         }
@@ -105,7 +112,7 @@ namespace MangaLibrarySystem
             }
             catch (Exception e)
             {
-                System.Diagnostics.Debug.Fail(e.Message);
+                System.Diagnostics.Debug.WriteLine(e.Message);
                 return null;
             }
         }
@@ -116,13 +123,13 @@ namespace MangaLibrarySystem
             {
                 string title = string.Empty;
 
-                title = baseNode.SelectSingleNode($"//*[@id='search']/div[1]/div[1]/div/span[3]/div[2]/div[2]//div[@class='sg-row']/*[2]//h2").InnerText;
+                title = baseNode.SelectSingleNode($"div/div/div[2]/div/div/div[1]/h2").InnerText;
                 
                 return title;
             }
             catch (Exception e)
             {
-                System.Diagnostics.Debug.Fail(e.Message);
+                System.Diagnostics.Debug.WriteLine(e.Message);
                 return null;
             }
         }
@@ -133,7 +140,8 @@ namespace MangaLibrarySystem
             {
                 string byLine = string.Empty;
 
-                byLine = baseNode.SelectSingleNode($"//*[@id='search']/div[1]/div[1]/div/span[3]/div[2]/div[2]//div[@class='sg-row']/*[2]//div[@class='a-row']").InnerText;
+                //byLine = baseNode.SelectSingleNode($"//*[@id='search']/div[1]/div[1]/div/span[3]/div[2]/div[2]//div[@class='sg-row']/*[2]//div[@class='a-row']").InnerText;
+                byLine = baseNode.SelectSingleNode($"div/div/div[2]/div/div/div[1]/div/div").InnerText;
 
                 byLine = byLine.Remove(0, byLine.IndexOf("by ")+3);
 
@@ -141,7 +149,7 @@ namespace MangaLibrarySystem
             }
             catch (Exception e)
             {
-                System.Diagnostics.Debug.Fail(e.Message);
+                System.Diagnostics.Debug.WriteLine(e.Message);
                 return null;
             }
         }
@@ -149,10 +157,17 @@ namespace MangaLibrarySystem
         public static async Task<AmazonRequestRespons> GetBookDataAsync(string isbn)
         {
             HtmlDocument doc = await GetHtmlAsync(isbn);
-            HtmlNodeCollection nodes = GetNodes(doc);
-            string[] byLineSplit = GetByLine(nodes[0]).Split('|');
-
-            return new AmazonRequestRespons(isbn, GetImageUri(nodes[0]), GetTitle(nodes[0]), new string[] { byLineSplit[0] }, byLineSplit[1]);
+            try
+            {
+                HtmlNodeCollection nodes = GetNodes(doc);
+                string[] byLineSplit = GetByLine(nodes[0]).Split('|');
+                return new AmazonRequestRespons(isbn, GetImageUri(nodes[0]), GetTitle(nodes[0]), new string[] { byLineSplit[0] }, byLineSplit[1]);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Unable to find media by ISBN, please check the ISBN again and search again.", "Invalid ISBN");
+                return null;
+            }
         }
 
         public static async Task<System.IO.Stream> GetStreamAsync(Uri uri)
@@ -179,7 +194,7 @@ namespace MangaLibrarySystem
 
         public class AmazonRequestRespons
         {
-            private const string DateTimeFormat = "dd/MM/yyyy";
+            private const string DateTimeFormat = "ddMMyyyy";
 
             public string isbn { get; }
             public Uri imageUri { get; }
