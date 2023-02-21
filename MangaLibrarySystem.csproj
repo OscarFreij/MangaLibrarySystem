@@ -65,6 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AmazonRequest.cs" />
+    <Compile Include="BookFinderRequest.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
