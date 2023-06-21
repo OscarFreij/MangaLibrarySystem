@@ -74,7 +74,17 @@ namespace MangaLibrarySystem
             try
             {
                 //HtmlNodeCollection nodes = doc.DocumentNode.SelectNodes($"//*[@id='search']/div[1]/div[1]/div/span[3]/div[2]/*[@data-index='1']");
-                HtmlNodeCollection nodes = doc.DocumentNode.SelectNodes($"//*[@id='search']/div[1]/div[1]/div/span[1]/div[1]/div[2][@data-index='1']/div/div/div");
+                HtmlNodeCollection nodes;
+
+                nodes = doc.DocumentNode.SelectNodes($"//*[@data-index=\"2\"]");
+                //nodes = doc.DocumentNode.SelectNodes($"//*[@id=\"search\"]/div[1]/div[1]/div/span[1]/div[1]/div[@data-cel-widget='search_result_1']");
+                /*
+                if (nodes == null)
+                {
+                    nodes = doc.DocumentNode.SelectNodes($"//*[@id=\"search\"]/div[1]/div[1]/div/span[1]/div[1]/div[2]");
+                }
+                */
+
                 return nodes;
             }
             catch (Exception e)
@@ -123,7 +133,7 @@ namespace MangaLibrarySystem
             {
                 string title = string.Empty;
 
-                title = baseNode.SelectSingleNode($"div/div/div[2]/div/div/div[1]/h2").InnerText;
+                title = baseNode.SelectSingleNode($"div/div/div/div/div/div[2]/div/div/div[1]/h2").InnerText;
                 
                 return title;
             }
@@ -141,7 +151,7 @@ namespace MangaLibrarySystem
                 string byLine = string.Empty;
 
                 //byLine = baseNode.SelectSingleNode($"//*[@id='search']/div[1]/div[1]/div/span[3]/div[2]/div[2]//div[@class='sg-row']/*[2]//div[@class='a-row']").InnerText;
-                byLine = baseNode.SelectSingleNode($"div/div/div[2]/div/div/div[1]/div/div").InnerText;
+                byLine = baseNode.SelectSingleNode($"div/div/div/div/div/div[2]/div/div/div[1]/div").InnerText;
 
                 byLine = byLine.Remove(0, byLine.IndexOf("by ")+3);
 
@@ -156,16 +166,37 @@ namespace MangaLibrarySystem
 
         public static async Task<AmazonRequestRespons> GetBookDataAsync(string isbn)
         {
-            HtmlDocument doc = await GetHtmlAsync(isbn);
             try
             {
-                HtmlNodeCollection nodes = GetNodes(doc);
+                HtmlNodeCollection nodes = GetNodes(await GetHtmlAsync(isbn));
+                if (nodes == null)
+                {
+                    throw new Exception("Nodes is null");
+                }
                 string[] byLineSplit = GetByLine(nodes[0]).Split('|');
                 return new AmazonRequestRespons(isbn, GetImageUri(nodes[0]), GetTitle(nodes[0]), new string[] { byLineSplit[0] }, byLineSplit[1]);
             }
             catch (Exception)
             {
                 MessageBox.Show("Unable to find media by ISBN, please check the ISBN again and search again.", "Invalid ISBN");
+                return null;
+            }
+        }
+
+        public static async Task<AmazonRequestSlimRespons> GetBookDataSlimAsync(string isbn)
+        {
+            try
+            {
+                HtmlNodeCollection nodes = GetNodes(await GetHtmlAsync(isbn));
+                if (nodes == null)
+                {
+                    throw new Exception("Nodes is null");
+                }
+                return new AmazonRequestSlimRespons(isbn, GetImageUri(nodes[0]));
+            }
+            catch (Exception)
+            {
+                //MessageBox.Show("Unable to find media by ISBN, please check the ISBN again and search again.", "Invalid ISBN");
                 return null;
             }
         }
@@ -225,6 +256,23 @@ namespace MangaLibrarySystem
                 }
 
                 return $"isbn: {this.isbn}; title: {this.title}; imageUri: {this.imageUri.ToString()}; authors: {authorsString}; releaseDateTime: {this.releaseDateTime.ToString(DateTimeFormat)}";
+            }
+        }
+
+        public class AmazonRequestSlimRespons
+        {
+            public string isbn { get; }
+            public Uri imageUri { get; }
+
+            public AmazonRequestSlimRespons(string isbn, Uri imageUri)
+            {
+                this.isbn = isbn;
+                this.imageUri = imageUri;
+            }
+
+            public override string ToString()
+            {
+                return $"isbn: {this.isbn}; imageUri: {this.imageUri.ToString()}";
             }
         }
     }

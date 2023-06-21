@@ -45,10 +45,16 @@ namespace MangaLibrarySystem
             switch (engineId)
             {
                 case 0:
-                    AmazonSearch();
+                    AmazonGoogleSearch(); //Default - Cover from Amazon and Text from Google.
                     break;
                 case 1:
-                    BookFinderSearch();
+                    AmazonSearch(); //Amazon Only
+                    break;
+                case 2:
+                    BookFinderSearch(); //BookFinder Only
+                    break;
+                case 3:
+                    GoogleSearch(); //Google Only
                     break;
                 default:
                     MessageBox.Show("Search Engine not found!", "Invalid engine selection");
@@ -103,6 +109,91 @@ namespace MangaLibrarySystem
                 richTextBoxDetails.Text += "\nEdition: " + respons.edition;
                 richTextBoxDetails.Text += "\nLanguage: " + respons.language;
                 richTextBoxDetails.Text += "\nISBN: " + respons.isbn;
+
+                isbnTextBox.Clear();
+            }
+        }
+
+        private async void GoogleSearch()
+        {
+            if (isbnTextBox.Text.Length == 0)
+            {
+                MessageBox.Show("ISBN missing. Please fill in ISBN number and try again!", "Missing ISBN!");
+                return;
+            }
+
+            GoogleRequest.GoogleRequestRespons respons = await GoogleRequest.GetBookDataAsync(isbnTextBox.Text);
+            if (respons != null)
+            {
+                System.Diagnostics.Debug.WriteLine(respons);
+                pictureBox1.ImageLocation = respons.items[0].volumeInfo.imageLinks.thumbnail.ToString();
+
+                richTextBoxTitle.Text = respons.items[0].volumeInfo.title;
+                richTextBoxDetails.Clear();
+                richTextBoxDetails.Text += "Author: ";
+                foreach (var author in respons.items[0].volumeInfo.authors)
+                {
+                    richTextBoxDetails.Text += author + ", ";
+                }
+                richTextBoxDetails.Text = richTextBoxDetails.Text.Substring(0, richTextBoxDetails.Text.Length - 2);
+
+                richTextBoxDetails.Text += "\nPublished date: " + respons.items[0].volumeInfo.publishedDate;
+                richTextBoxDetails.Text += "\nPublisher: " + respons.items[0].volumeInfo.publisher;
+                richTextBoxDetails.Text += "\nMaturity Rating: " + respons.items[0].volumeInfo.maturityRating;
+
+                richTextBoxDetails.Text += "\nDescription: " + respons.items[0].volumeInfo.description;
+
+                foreach (var isbn in respons.items[0].volumeInfo.industryIdentifiers)
+                {
+                    richTextBoxDetails.Text += "\n" + isbn.type + ": " + isbn.identifier;
+                }
+
+                isbnTextBox.Clear();
+            }
+        }
+
+        private async void AmazonGoogleSearch()
+        {
+            if (isbnTextBox.Text.Length == 0)
+            {
+                MessageBox.Show("ISBN missing. Please fill in ISBN number and try again!", "Missing ISBN!");
+                return;
+            }
+            
+            GoogleRequest.GoogleRequestRespons respons = await GoogleRequest.GetBookDataAsync(isbnTextBox.Text);
+            AmazonRequest.AmazonRequestSlimRespons respons2 = await AmazonRequest.GetBookDataSlimAsync(isbnTextBox.Text); //Slim only returns cover image.
+            if (respons != null)
+            {
+                System.Diagnostics.Debug.WriteLine(respons);
+
+                if (respons2 != null)
+                {
+                    pictureBox1.ImageLocation = respons2.imageUri.ToString();
+                }
+                else
+                {
+                    pictureBox1.ImageLocation = respons.items[0].volumeInfo.imageLinks.thumbnail.ToString();
+                }
+
+                richTextBoxTitle.Text = respons.items[0].volumeInfo.title;
+                richTextBoxDetails.Clear();
+                richTextBoxDetails.Text += "Author: ";
+                foreach (var author in respons.items[0].volumeInfo.authors)
+                {
+                    richTextBoxDetails.Text += author + ", ";
+                }
+                richTextBoxDetails.Text = richTextBoxDetails.Text.Substring(0, richTextBoxDetails.Text.Length - 2);
+
+                richTextBoxDetails.Text += "\nPublished date: " + respons.items[0].volumeInfo.publishedDate;
+                richTextBoxDetails.Text += "\nPublisher: " + respons.items[0].volumeInfo.publisher;
+                richTextBoxDetails.Text += "\nMaturity Rating: " + respons.items[0].volumeInfo.maturityRating;
+
+                richTextBoxDetails.Text += "\nDescription: " + respons.items[0].volumeInfo.description;
+
+                foreach (var isbn in respons.items[0].volumeInfo.industryIdentifiers)
+                {
+                    richTextBoxDetails.Text += "\n" + isbn.type + ": " + isbn.identifier;
+                }
 
                 isbnTextBox.Clear();
             }
